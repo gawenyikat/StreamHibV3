@@ -654,20 +654,55 @@ document.addEventListener('alpine:init', () => {
             } catch (error) { /* Toast sudah ditangani oleh callApi */ }
         },
         async handleStartManualLive() {
-            if (!this.forms.manualLive.sessionName || !this.forms.manualLive.videoFile || !this.forms.manualLive.streamKey) {
-                this.showToast(this.t('allFieldsRequired'), 'error'); return;
-            }
-            try {
-                const result = await this.callApi('/start', 'POST', {
-                    session_name: this.forms.manualLive.sessionName,
-                    video_file: this.forms.manualLive.videoFile,
-                    stream_key: this.forms.manualLive.streamKey,
-                    platform: this.forms.manualLive.platform
-                });
-                this.showToast(result.message || this.t('manualLiveStartedSuccess'), 'success');
-                this.closeActiveModal();
-            } catch (error) { /* Toast sudah ditangani oleh callApi */ }
-        },
+    // Pastikan semua field yang diperlukan terisi
+    if (!this.forms.manualLive.sessionName || !this.forms.manualLive.videoFile || !this.forms.manualLive.streamKey) {
+        this.showToast(this.t('allFieldsRequired'), 'error');
+        return;
+    }
+
+    // Aktifkan indikator loading jika ada (misalnya, this.startLiveLoading = true;)
+    // Jika Anda memiliki variabel loading untuk ini, tambahkan di sini
+    // Contoh: this.loadingStates.startManualLive = true;
+
+    try {
+        const payload = {
+            session_name: this.forms.manualLive.sessionName,
+            video_file: this.forms.manualLive.videoFile,
+            stream_key: this.forms.manualLive.streamKey,
+            platform: this.forms.manualLive.platform
+        };
+
+        // Panggil API untuk memulai sesi live
+        const result = await this.callApi('/start', 'POST', payload);
+
+        // Jika API berhasil, tampilkan toast sukses dan tutup modal
+        this.showToast(result.message || this.t('manualLiveStartedSuccess'), 'success');
+        this.closeActiveModal();
+
+        // Opsional: Perbarui daftar sesi live setelah berhasil memulai
+        // this.fetchLiveSessions();
+
+    } catch (error) {
+        // Error sudah ditangani dan toast sudah ditampilkan oleh fungsi this.callApi
+        // Anda bisa menambahkan console.error untuk debugging lebih lanjut
+        console.error("Gagal memulai live manual:", error);
+
+        // Jika Anda ingin menampilkan pesan yang lebih spesifik dari respons 403
+        // (walaupun callApi sudah menanganinya, ini untuk penyesuaian jika diperlukan)
+        if (error.message && error.message.includes('batas sesi live aktif')) {
+            this.showToast(error.message, 'error', 5000); // Tampilkan pesan spesifik dari backend
+        } else {
+            // Jika ada error lain yang tidak spesifik, gunakan pesan umum
+            // Pastikan Anda memiliki terjemahan untuk 'startLiveFailed' di objek translations Anda
+            this.showToast(this.t('startLiveFailed') || 'Gagal memulai live.', 'error');
+        }
+
+    } finally {
+        // Nonaktifkan indikator loading di sini, baik berhasil atau gagal
+        // Contoh: this.loadingStates.startManualLive = false;
+    }
+},
+        
         async handleScheduleNewLive() {
             const form = this.forms.scheduleLive;
             if (!form.sessionName || !form.videoFile || !form.streamKey) {
