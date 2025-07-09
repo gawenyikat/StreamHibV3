@@ -42,6 +42,10 @@ os.makedirs(VIDEO_DIR, exist_ok=True)
 TRIAL_MODE_ENABLED = False  # Ganti menjadi False/True untuk mengubah
 TRIAL_RESET_HOURS = 2    # Atur interval reset (dalam jam)
 
+# --- Tambahkan ini di bagian atas file, setelah variabel konfigurasi PATH dan TRIAL_MODE_ENABLED ---
+MAX_ACTIVE_SESSIONS = 3 # Ubah angka ini sesuai batas yang Anda inginkan
+# --------------------------------------------------------------------------------------------------
+
 app = Flask(__name__)
 CORS(app, resources={r"/api/*": {"origins": "http://localhost:5000", "supports_credentials": True}})
 app.secret_key = "emuhib"
@@ -1626,6 +1630,15 @@ def start_streaming_api():
         
         if not all([platform, stream_key, video_file, session_name_original, session_name_original.strip()]):
             return jsonify({'status': 'error', 'message': 'Semua field wajib diisi dan nama sesi tidak boleh kosong.'}), 400
+        
+        # --- Sisipkan logika pengecekan batas sesi di sini ---
+        s_data = read_sessions()
+        current_active_sessions_count = len(s_data.get('active_sessions', []))
+
+        if current_active_sessions_count >= MAX_ACTIVE_SESSIONS:
+            logging.warning(f"Percobaan memulai sesi baru gagal: Batas sesi aktif ({MAX_ACTIVE_SESSIONS}) telah tercapai.")
+            return jsonify({'status': 'error', 'message': f'Anda telah mencapai batas sesi live aktif ({MAX_ACTIVE_SESSIONS}). Harap hentikan sesi yang ada sebelum memulai yang baru.'}), 403 # Forbidden
+        # ----------------------------------------------------
         
         video_path = os.path.abspath(os.path.join(VIDEO_DIR, video_file))
         if not os.path.isfile(video_path):
