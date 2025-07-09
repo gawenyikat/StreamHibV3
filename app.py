@@ -144,25 +144,26 @@ def check_dns_propagation(domain_name):
     try:
         import socket
         
-        # Get domain IP
+        # Get domain IP (ini akan mencoba A atau AAAA record)
         domain_ip = socket.gethostbyname(domain_name)
         
-        # Get server IP
+        # Get server IP secara eksplisit menggunakan IPv4
         try:
-            server_ip = subprocess.check_output(["curl", "-s", "ifconfig.me"], text=True, timeout=5).strip()
+            server_ip = subprocess.check_output(["curl", "-4", "-s", "ifconfig.me"], text=True, timeout=5).strip()
+            # Penjelasan: -4 memaksa curl untuk hanya menggunakan IPv4
         except:
             try:
-                server_ip = subprocess.check_output(["curl", "-s", "ipinfo.io/ip"], text=True, timeout=5).strip()
+                server_ip = subprocess.check_output(["curl", "-4", "-s", "ipinfo.io/ip"], text=True, timeout=5).strip()
             except:
-                return False, "Cannot determine server IP"
+                return False, "Tidak dapat menentukan IP server (IPv4)" # Pesan error diperjelas
         
         if domain_ip == server_ip:
             return True, f"DNS OK: {domain_name} → {server_ip}"
         else:
-            return False, f"DNS mismatch: {domain_name} → {domain_ip}, server IP: {server_ip}"
+            return False, f"DNS tidak cocok: {domain_name} → {domain_ip}, IP server: {server_ip}" # Pesan error diperjelas
             
     except Exception as e:
-        return False, f"DNS check failed: {str(e)}"
+        return False, f"Gagal cek DNS: {str(e)}" # Pesan error diperjelas
 
 def ensure_ssh_access():
     """
