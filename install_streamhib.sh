@@ -139,7 +139,7 @@ Description=StreamHib Flask Service with Gunicorn
 After=network.target
 
 [Service]
-ExecStart=/root/StreamHibV3/venv/bin/gunicorn --worker-class eventlet -w 1 -b 0.0.0.0:5000 app:app
+ExecStart=/root/StreamHibV3/venv/bin/gunicorn --worker-class eventlet -w 1 -b 0.0.0.0:5000 --forwarded-allow-ips "*" app:app
 WorkingDirectory=/root/StreamHibV3
 Restart=always
 User=root
