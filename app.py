@@ -24,6 +24,7 @@ import time
 import paramiko
 import scp
 import threading
+from werkzeug.middleware.proxy_fix import ProxyFix # <-- Tambahkan ini
 
 # Konfigurasi logging
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s [%(levelname)s] %(message)s')
@@ -49,11 +50,13 @@ MAX_ACTIVE_SESSIONS = 3 # Ubah angka ini sesuai batas yang Anda inginkan
 app = Flask(__name__)
 CORS(app, resources={r"/api/*": {"origins": "http://localhost:5000", "supports_credentials": True}})
 app.secret_key = "emuhib"
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 socketio = SocketIO(app, async_mode='eventlet')
 socketio_lock = Lock()
 app.permanent_session_lifetime = timedelta(hours=12)
 jakarta_tz = timezone('Asia/Jakarta')
 migration_in_progress = False
+
 
 # ==================== SISTEM DOMAIN YANG DIPERBAIKI ====================
 
@@ -226,6 +229,12 @@ def setup_nginx_config(domain_name, ssl_enabled=False, port=5000):
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
+
+         # --- TAMBAHKAN BARIS INI UNTUK WEBSOCKET YANG LEBIH STABIL ---
+        proxy_redirect off;
+        proxy_buffering off;
+        proxy_request_buffering off;
+        # -------------------------------------------------------------
         
         # WebSocket support
         proxy_http_version 1.1;
