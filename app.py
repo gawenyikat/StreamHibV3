@@ -228,23 +228,23 @@ def setup_nginx_config(domain_name, ssl_enabled=False, port=5000):
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-
-         # --- TAMBAHKAN BARIS INI UNTUK WEBSOCKET YANG LEBIH STABIL ---
-        proxy_redirect off;
-        proxy_buffering off;
-        proxy_request_buffering off;
-        # -------------------------------------------------------------
+        # --- PERUBAHAN KRUSIAL DI SINI ---
+        proxy_set_header X-Forwarded-Proto https; # <--- PASTIKAN INI ADALAH 'https'
+        # ----------------------------------
         
         # WebSocket support
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
+        proxy_set_header Connection "Upgrade"; # <--- PASTIKAN 'Upgrade' DENGAN HURUF KAPITAL 'U'
+        proxy_redirect off;
+        proxy_buffering off;
+        proxy_request_buffering off;
+        proxy_cache_bypass $http_upgrade;
         
-        # Timeout settings
-        proxy_connect_timeout 60s;
-        proxy_send_timeout 60s;
-        proxy_read_timeout 60s;
+        # Timeout settings (timeout panjang untuk WebSocket)
+        proxy_connect_timeout 86400s;
+        proxy_send_timeout 86400s;
+        proxy_read_timeout 86400s;
     }}
 }}"""
         
